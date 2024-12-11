@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const EducationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: String,
   institution: String,
   fieldOfStudy: String,
   startDate: Date,
@@ -9,7 +9,7 @@ const EducationSchema = new mongoose.Schema({
 });
 
 const ExperienceSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: String,
   company: String,
   position: String,
   startDate: { type: Date },
@@ -18,7 +18,7 @@ const ExperienceSchema = new mongoose.Schema({
 });
 
 const CertificationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: String,
   name: String,
   issuedBy: String,
   issueDate: { type: Date },
@@ -27,17 +27,18 @@ const CertificationSchema = new mongoose.Schema({
 
 const SeekerProfileSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  firstname: { type: String, required: true },
-  lastname: { type: String, required: true },
+  firstname: String,
+  lastname: String,
   gender: { type: String, enum: ["male", "female"] },
   birthday: Date,
   phone: String,
   address: String,
+  bio: String,
+  resumeUrl: String,
   education: [EducationSchema],
   experience: [ExperienceSchema],
   certification: [CertificationSchema],
-  skills: String,
-  resumeUrl: String,
+  skills: [{ type: String }],
 });
 
 module.exports = mongoose.model("SeekerProfile", SeekerProfileSchema);

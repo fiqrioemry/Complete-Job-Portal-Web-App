@@ -45,26 +45,16 @@ async function userSignUp(req, res) {
         .status(401)
         .send({ success: false, message: "Email is already registered" });
 
-    // check phone
-    const isPhoneExist = await SeekerProfile.findOne({ phone });
-
-    if (isPhoneExist)
-      return res
-        .status(401)
-        .send({ success: false, message: "Phone is already used" });
-
     // encrypt password
     const salt = await bcrypt.genSalt();
     const hashPassword = await bcrypt.hash(password, salt);
 
     // save user
-    const newUser = new User({
+    const newUser = await User.create({
       email,
       password: hashPassword,
       role: role || "jobseeker",
     });
-
-    await newUser.save();
 
     // save user
     await SeekerProfile.create({
@@ -102,12 +92,8 @@ async function userSignIn(req, res) {
     }
 
     // Check if the user exists
-    const isUserExist = await User.findOne({ email }).populate({
-      path: "SeekerProfile",
-      name: "firstname lastname",
-    });
+    const isUserExist = await User.findOne({ email });
 
-    console.log(isUserExist);
     if (!isUserExist)
       return res
         .status(401)
@@ -124,24 +110,23 @@ async function userSignIn(req, res) {
         .status(401)
         .send({ success: false, message: "Password is incorrect" });
 
+    const profile = await SeekerProfile.findOne({ userId: isUserExist._id });
+
     // Extract user data
     const userId = isUserExist._id;
     const userEmail = isUserExist.email;
     const userRole = isUserExist.role;
-    const userName =
-      isUserExist.SeekerProfile.firstname +
-      " " +
-      isUserExist.SeekerProfile.lastname;
+    const userName = profile.firstname + " " + profile.lastname;
 
     // Generate access and refresh tokens
     const accessToken = jwt.sign(
-      { userId, userEmail, userRole, userName },
+      { userId, userEmail, userRole },
       process.env.ACCESS_TOKEN,
       { expiresIn: "15m" }
     );
 
     const refreshToken = jwt.sign(
-      { userId, userEmail, userRole, userName },
+      { userId, userEmail, userRole },
       process.env.REFRESH_TOKEN,
       { expiresIn: "30d" }
     );
@@ -187,23 +172,6 @@ async function userSignOut(req, res) {
     message: "Logout is successful",
     success: true,
   });
-}
-
-async function userSignOut(req, res) {
-  delete req.headers.authorization;
-
-  res.clearCookie("refreshToken");
-
-  return res.status(200).send({
-    message: "Logout is Success",
-    success: true,
-  });
-}
-
-async function userRefreshToken(req, res) {
-  try {
-    const { userId } = req.user;
-  } catch (error) {}
 }
 
 module.exports = { userSignUp, userSignIn, userSignOut };

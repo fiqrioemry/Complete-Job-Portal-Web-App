@@ -9,7 +9,6 @@ const UserSchema = new mongoose.Schema({
     default: "jobseeker",
     required: true,
   },
-  SeekerProfile: { type: mongoose.Schema.Types.ObjectId, ref: "SeekerProfile" },
 });
 
 module.exports = mongoose.model("User", UserSchema);

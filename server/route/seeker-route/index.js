@@ -4,7 +4,7 @@ const seeker = require("../../controller/seeker-controller");
 const router = express.Router();
 
 router.get("/profile", validation.isAuthenticate, seeker.getSeekerProfile);
-router.post(
+router.put(
   "/profile/update",
   validation.isAuthenticate,
   seeker.updateSeekerProfile
