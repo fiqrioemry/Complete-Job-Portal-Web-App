@@ -3,19 +3,40 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const Token = require("../../model/Token");
+const SeekerProfile = require("../../model/SeekerProfile");
 dotenv.config();
 
 // user signup : registration
 async function userSignUp(req, res) {
   try {
-    const { email, password, passwordConfirm, role } = req.body;
+    const {
+      email,
+      password,
+      passwordConfirm,
+      role,
+      firstname,
+      lastname,
+      phone,
+      location,
+    } = req.body;
 
     // check field empty
-    if (!email || !password || !passwordConfirm)
+    if (
+      !email ||
+      !password ||
+      !passwordConfirm ||
+      !firstname ||
+      !lastname ||
+      !phone ||
+      !location
+    )
       return res
         .status(401)
         .send({ success: false, message: "All field required" });
 
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
     // check email existance
     const isEmailExist = await User.findOne({ email });
 
@@ -23,6 +44,14 @@ async function userSignUp(req, res) {
       return res
         .status(401)
         .send({ success: false, message: "Email is already registered" });
+
+    // check phone
+    const isPhoneExist = await User.findOne({ phone });
+
+    if (isPhoneExist)
+      return res
+        .status(401)
+        .send({ success: false, message: "Phone is already used" });
 
     // encrypt password
     const salt = await bcrypt.genSalt();
@@ -33,6 +62,14 @@ async function userSignUp(req, res) {
       email,
       password: hashPassword,
       role: role || "jobseeker",
+    });
+
+    // save user
+    await SeekerProfile.create({
+      firstname,
+      lastname,
+      location: location,
+      phone,
     });
 
     // send success info
@@ -55,8 +92,15 @@ async function userSignIn(req, res) {
         .status(401)
         .send({ success: false, message: "All field required" });
 
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
     // check email existance
-    const isUserExist = await User.findOne({ email });
+    const isUserExist = await User.findOne({ email }).populate({
+      path: "seekerProfile",
+      select: "firstname lastname",
+    });
 
     if (!isUserExist)
       return res
@@ -78,6 +122,9 @@ async function userSignIn(req, res) {
     const userId = isUserExist._id;
     const userEmail = isUserExist.email;
     const userRole = isUserExist.role;
+    const userName =
+      isUserExist.seekerProfile?.firstname +
+      isUserExist.seekerProfile?.lastname;
 
     // generate data to token
     const accessToken = jwt.sign(
