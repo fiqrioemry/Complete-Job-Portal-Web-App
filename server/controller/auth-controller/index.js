@@ -1,7 +1,7 @@
-const User = require("../../model/User");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const jwt = require("jsonwebtoken");
+const User = require("../../model/User");
 const Token = require("../../model/Token");
 const SeekerProfile = require("../../model/SeekerProfile");
 dotenv.config();
@@ -34,7 +34,7 @@ async function userSignUp(req, res) {
         .status(401)
         .send({ success: false, message: "All field required" });
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
     // check email existance
@@ -46,7 +46,7 @@ async function userSignUp(req, res) {
         .send({ success: false, message: "Email is already registered" });
 
     // check phone
-    const isPhoneExist = await User.findOne({ phone });
+    const isPhoneExist = await SeekerProfile.findOne({ phone });
 
     if (isPhoneExist)
       return res
@@ -58,7 +58,7 @@ async function userSignUp(req, res) {
     const hashPassword = await bcrypt.hash(password, salt);
 
     // save user
-    await User.create({
+    const newUser = await User.create({
       email,
       password: hashPassword,
       role: role || "jobseeker",
@@ -66,9 +66,10 @@ async function userSignUp(req, res) {
 
     // save user
     await SeekerProfile.create({
+      userId: newUser._id,
       firstname,
       lastname,
-      location: location,
+      location,
       phone,
     });
 
@@ -81,33 +82,31 @@ async function userSignUp(req, res) {
   }
 }
 
-// user signin : Login
+// User signin: Login
 async function userSignIn(req, res) {
   try {
     const { email, password } = req.body;
 
-    // check field empty
+    // Check if both fields are provided
     if (!email || !password)
       return res
         .status(401)
-        .send({ success: false, message: "All field required" });
+        .send({ success: false, message: "All fields are required" });
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    // check email existance
-    const isUserExist = await User.findOne({ email }).populate({
-      path: "seekerProfile",
-      select: "firstname lastname",
-    });
+    // Check if the user exists
+    const isUserExist = await User.findOne({ email }).populate("SeekerProfile");
 
     if (!isUserExist)
       return res
         .status(401)
         .send({ success: false, message: "Email is not registered" });
 
-    // compare password
+    // Compare the password
     const isPasswordMatch = await bcrypt.compare(
       password,
       isUserExist.password
@@ -116,17 +115,15 @@ async function userSignIn(req, res) {
     if (!isPasswordMatch)
       return res
         .status(401)
-        .send({ success: false, message: "Password is wrong" });
+        .send({ success: false, message: "Password is incorrect" });
 
-    // assign user data
+    // Extract user data
     const userId = isUserExist._id;
     const userEmail = isUserExist.email;
     const userRole = isUserExist.role;
-    const userName =
-      isUserExist.seekerProfile?.firstname +
-      isUserExist.seekerProfile?.lastname;
+    const userName = seekerProfile.firstname + " " + seekerProfile.lastname;
 
-    // generate data to token
+    // Generate access and refresh tokens
     const accessToken = jwt.sign(
       { userId, userEmail, userRole },
       process.env.ACCESS_TOKEN,
@@ -139,37 +136,47 @@ async function userSignIn(req, res) {
       { expiresIn: "30d" }
     );
 
-    // check token
+    // Save or update the refresh token in the Token collection
     const tokenData = await Token.findOne({ userId });
-
     if (tokenData) {
-      await Token.update({ refreshToken });
+      await Token.updateOne({ userId }, { refreshToken });
     } else {
       await Token.create({ userId, refreshToken });
     }
 
-    // set token as cookie
+    // Set the refresh token in a cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
-      maxAge: 24 * 30 * 60 * 60 * 1000,
+      maxAge: 24 * 30 * 60 * 60 * 1000, // 30 days
     });
 
-    // send success status
+    // Send response with success status and token
     return res.status(200).send({
-      message: "Login is success",
+      message: "Login successful",
       data: {
-        accessToken: accessToken,
+        accessToken,
         user: {
           userId,
           userEmail,
           userRole,
+          userName,
         },
       },
     });
   } catch (error) {
+    console.error(error); // Log the error for debugging
     return res.status(500).send({ message: "Internal Server Error" });
   }
+}
+
+// User signout: Logout
+async function userSignOut(req, res) {
+  res.clearCookie("refreshToken");
+  return res.status(200).send({
+    message: "Logout is successful",
+    success: true,
+  });
 }
 
 async function userSignOut(req, res) {

@@ -3,5 +3,5 @@ const SeekerRoute = require("./seeker-route");
 
 module.exports = {
   AuthRoute,
-  SeekerRouter,
+  SeekerRoute,
 };

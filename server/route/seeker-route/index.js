@@ -1,6 +1,6 @@
 const express = require("express");
 const validation = require("../../middleware");
-const seeker = require("../../controller/seeker-controller/SeekerProfile");
+const seeker = require("../../controller/seeker-controller");
 const router = express.Router();
 
 router.get("/profile", validation.isAuthenticate, seeker.getSeekerProfile);
@@ -14,8 +14,8 @@ router.post(
   validation.isAuthenticate,
   seeker.addSeekerExperience
 );
-router.post(
-  "/experience/update",
+router.put(
+  "/experience/update/:id",
   validation.isAuthenticate,
   seeker.updateSeekerExperience
 );

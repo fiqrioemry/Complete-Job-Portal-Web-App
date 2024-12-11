@@ -32,7 +32,7 @@ app.use(
 
 // route configuration
 app.use("/api/auth", services.AuthRoute);
-app.use("/api/seeker", services.SeekerRouter);
+app.use("/api/seeker", services.SeekerRoute);
 
 app.listen(PORT, () => {
   console.log(`server connected on port ${PORT}`);
