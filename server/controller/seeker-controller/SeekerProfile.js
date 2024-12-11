@@ -87,3 +87,5 @@ async function getSeekerProfile(req, res) {
     });
   }
 }
+
+module.exports = { getSeekerProfile, updateSeekerProfile };
