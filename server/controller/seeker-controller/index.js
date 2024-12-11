@@ -186,6 +186,97 @@ async function updateSeekerExperience(req, res) {
   }
 }
 
+// Add Education to SeekerProfile
+async function addSeekerEducation(req, res) {
+  try {
+    const { userId, company, position, startDate, endDate, description } =
+      req.body;
+
+    // Validate required fields
+    if (!userId || !company || !position) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Required fields are missing." });
+    }
+
+    // Find the seeker profile by userId
+    const seekerProfile = await SeekerProfile.findOne({ userId });
+
+    if (!seekerProfile) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Seeker profile not found." });
+    }
+
+    // Add the new experience to the experience array
+    seekerProfile.experience.push({
+      company,
+      position,
+      startDate,
+      endDate,
+      description,
+    });
+    await seekerProfile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Experience added successfully.",
+      data: seekerProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+}
+
+async function updateSeekerEducation(req, res) {
+  try {
+    const { userId, company, position, startDate, endDate, description } =
+      req.body;
+
+    // Validate required fields
+    if (!userId || !company || !position) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Required fields are missing." });
+    }
+
+    // Find the seeker profile by userId
+    const seekerProfile = await SeekerProfile.findOne({ userId });
+
+    if (!seekerProfile) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Seeker profile not found." });
+    }
+
+    // Add the new experience to the experience array
+    seekerProfile.experience.push({
+      company,
+      position,
+      startDate,
+      endDate,
+      description,
+    });
+    await seekerProfile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Experience added successfully.",
+      data: seekerProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+}
+
 module.exports = {
   getSeekerProfile,
   updateSeekerProfile,

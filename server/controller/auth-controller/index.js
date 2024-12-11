@@ -58,11 +58,13 @@ async function userSignUp(req, res) {
     const hashPassword = await bcrypt.hash(password, salt);
 
     // save user
-    const newUser = await User.create({
+    const newUser = new User({
       email,
       password: hashPassword,
       role: role || "jobseeker",
     });
+
+    await newUser.save();
 
     // save user
     await SeekerProfile.create({
@@ -78,6 +80,7 @@ async function userSignUp(req, res) {
       .status(201)
       .send({ message: "Registration success, please login." });
   } catch (error) {
+    console.log(error);
     return res.status(500).send({ message: "Internal Server Error" });
   }
 }
@@ -99,8 +102,12 @@ async function userSignIn(req, res) {
     }
 
     // Check if the user exists
-    const isUserExist = await User.findOne({ email }).populate("SeekerProfile");
+    const isUserExist = await User.findOne({ email }).populate({
+      path: "SeekerProfile",
+      name: "firstname lastname",
+    });
 
+    console.log(isUserExist);
     if (!isUserExist)
       return res
         .status(401)
@@ -121,17 +128,20 @@ async function userSignIn(req, res) {
     const userId = isUserExist._id;
     const userEmail = isUserExist.email;
     const userRole = isUserExist.role;
-    const userName = seekerProfile.firstname + " " + seekerProfile.lastname;
+    const userName =
+      isUserExist.SeekerProfile.firstname +
+      " " +
+      isUserExist.SeekerProfile.lastname;
 
     // Generate access and refresh tokens
     const accessToken = jwt.sign(
-      { userId, userEmail, userRole },
+      { userId, userEmail, userRole, userName },
       process.env.ACCESS_TOKEN,
       { expiresIn: "15m" }
     );
 
     const refreshToken = jwt.sign(
-      { userId, userEmail, userRole },
+      { userId, userEmail, userRole, userName },
       process.env.REFRESH_TOKEN,
       { expiresIn: "30d" }
     );
