@@ -205,7 +205,7 @@ async function userRefreshToken(req, res) {
 
     // generate new accesstoken
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN, {
-      expiresIn: "15m",
+      expiresIn: "30d",
     });
 
     return res.status(201).send({ success: true, accessToken: accessToken });

@@ -120,7 +120,6 @@ async function addSeekerExperience(req, res) {
     return res.status(200).json({
       success: true,
       message: "Experience added successfully.",
-      data: seekerProfile,
     });
   } catch (error) {
     return res.status(500).json({
@@ -131,7 +130,7 @@ async function addSeekerExperience(req, res) {
   }
 }
 
-// Update an Experience in SeekerProfile
+// Update Experience in SeekerProfile
 async function updateSeekerExperience(req, res) {
   try {
     const { id } = req.params;
@@ -146,35 +145,39 @@ async function updateSeekerExperience(req, res) {
         .json({ success: false, message: "Required fields are missing." });
     }
 
-    const seekerProfile = await SeekerProfile.findOne({ userId });
+    // add key finder
+    const filter = {
+      userId: userId,
+      "experience._id": id,
+    };
+
+    // assign update value
+    const update = {
+      $set: {
+        "experience.$.company": company,
+        "experience.$.position": position,
+        "experience.$.startDate": startDate,
+        "experience.$.endDate": endDate,
+        "experience.$.description": description,
+      },
+    };
+
+    // Update experience
+    const seekerProfile = await SeekerProfile.findOneAndUpdate(filter, update, {
+      new: true,
+    });
 
     if (!seekerProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Seeker profile not found." });
+      return res.status(404).json({
+        success: false,
+        message: "Experience not found.",
+      });
     }
-
-    const experience = seekerProfile.experience.find((item) => item._id === id);
-    console.log(seekerProfile.experience);
-    if (!experience) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Experience not found." });
-    }
-
-    // Update experience fields
-    if (company) experience.company = company;
-    if (position) experience.position = position;
-    if (startDate) experience.startDate = startDate;
-    if (endDate) experience.endDate = endDate;
-    if (description) experience.description = description;
-
-    await seekerProfile.save();
-
+    // send response and updated data
     return res.status(200).json({
       success: true,
       message: "Experience updated successfully.",
-      data: seekerProfile,
+      updatedData: seekerProfile.experience.id(id),
     });
   } catch (error) {
     return res.status(500).json({
@@ -188,17 +191,17 @@ async function updateSeekerExperience(req, res) {
 // Add Education to SeekerProfile
 async function addSeekerEducation(req, res) {
   try {
-    const { userId, company, position, startDate, endDate, description } =
-      req.body;
+    const { userId } = req.user;
+    const { institution, fieldOfStudy, startDate, endDate } = req.body;
 
     // Validate required fields
-    if (!userId || !company || !position) {
+    if (!institution || !fieldOfStudy || !startDate || !endDate) {
       return res
         .status(400)
         .json({ success: false, message: "Required fields are missing." });
     }
 
-    // Find the seeker profile by userId
+    // Find  seeker profile by userId
     const seekerProfile = await SeekerProfile.findOne({ userId });
 
     if (!seekerProfile) {
@@ -207,20 +210,19 @@ async function addSeekerEducation(req, res) {
         .json({ success: false, message: "Seeker profile not found." });
     }
 
-    // Add the new experience to the experience array
-    seekerProfile.experience.push({
-      company,
-      position,
+    // push education data
+    seekerProfile.education.push({
+      userId,
+      institution,
+      fieldOfStudy,
       startDate,
       endDate,
-      description,
     });
     await seekerProfile.save();
 
     return res.status(200).json({
       success: true,
-      message: "Experience added successfully.",
-      data: seekerProfile,
+      message: "Education added successfully.",
     });
   } catch (error) {
     return res.status(500).json({
@@ -231,41 +233,56 @@ async function addSeekerEducation(req, res) {
   }
 }
 
+//Update Education in SeekerProfile
 async function updateSeekerEducation(req, res) {
   try {
-    const { userId, company, position, startDate, endDate, description } =
-      req.body;
+    const { id } = req.params;
+    const { userId } = req.user;
+    const { institution, fieldOfStudy, startDate, endDate } = req.body;
 
     // Validate required fields
-    if (!userId || !company || !position) {
+    if (!institution || !fieldOfStudy || !startDate || !endDate) {
       return res
         .status(400)
         .json({ success: false, message: "Required fields are missing." });
     }
 
-    // Find the seeker profile by userId
-    const seekerProfile = await SeekerProfile.findOne({ userId });
+    // add key finder
+    const filter = {
+      userId,
+      "education._id": id,
+    };
+
+    // add update data
+    const update = {
+      $set: {
+        "education.$.insitution": institution,
+        "education.$.fieldOfStudy": fieldOfStudy,
+        "education.$.startDate": startDate,
+        "education.$.endDate": endDate,
+      },
+    };
+    // find and update
+    const seekerProfile = await SeekerProfile.findOne(
+      { userId, "education._id": mongoose.Types.ObjectId(id) },
+      { "education.$": 1 } // Hanya mengambil elemen yang cocok dari array education
+    );
+
+    console.log(seekerProfile);
 
     if (!seekerProfile) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Seeker profile not found." });
+      return res.status(404).json({
+        success: false,
+        message: "Education not found.",
+      });
     }
 
-    // Add the new experience to the experience array
-    seekerProfile.experience.push({
-      company,
-      position,
-      startDate,
-      endDate,
-      description,
-    });
-    await seekerProfile.save();
-
+    console.log(seekerProfile);
+    // send response and updated data
     return res.status(200).json({
       success: true,
-      message: "Experience added successfully.",
-      data: seekerProfile,
+      message: "Education updated successfully.",
+      updatedData: seekerProfile,
     });
   } catch (error) {
     return res.status(500).json({
@@ -281,4 +298,6 @@ module.exports = {
   updateSeekerProfile,
   addSeekerExperience,
   updateSeekerExperience,
+  addSeekerEducation,
+  updateSeekerEducation,
 };
