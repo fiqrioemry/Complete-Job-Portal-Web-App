@@ -27,8 +27,8 @@ const CertificationSchema = new mongoose.Schema({
 
 const SeekerSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  firstname: String,
-  lastname: String,
+  firstName: String,
+  lastName: String,
   gender: { type: String, enum: ["male", "female"] },
   birthday: Date,
   phone: String,
