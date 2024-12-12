@@ -19,10 +19,6 @@ async function seekerSignUp(req, res) {
       location,
     } = req.body;
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
-    }
-
     if (password !== passwordConfirm) {
       return res.status(400).json({ message: "Password did not match" });
     }
@@ -79,10 +75,6 @@ async function recruiterSignUp(req, res) {
       lastName,
     } = req.body;
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
-    }
-
     if (password !== passwordConfirm) {
       return res.status(400).json({ message: "Password did not match" });
     }
@@ -133,11 +125,6 @@ async function userSignIn(req, res) {
   try {
     const { email, password } = req.body;
 
-    // Validate email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
-    }
-
     // Check if the user exists
     const isUserExist = await User.findOne({ email });
 
@@ -157,30 +144,27 @@ async function userSignIn(req, res) {
         .status(401)
         .send({ success: false, message: "Password is incorrect" });
 
-    if (isUserExist.role === "jobseeker") {}
-      const profile = await Seeker.findOne({ userId: isUserExist._id });
-      const userId = isUserExist._id;
-      const userEmail = isUserExist.email;
-      const userRole = isUserExist.role;
-      const userName = profile.firstName + " " + profile.lastName;
+    let profile = [];
+    if (isUserExist.role === "jobseeker") {
+      profile = await Seeker.findOne({ userId: isUserExist._id });
+    } else {
+      profile = await Recruiter.findOne({ userId: isUserExist._id });
+    }
 
-  } else { 
-    const profile = await Seeker.findOne({ userId: isUserExist._id });
     const userId = isUserExist._id;
     const userEmail = isUserExist.email;
     const userRole = isUserExist.role;
-    const userName = profile.firstName + " " + profile.lastName;
+    const userName = profile?.firstName + " " + profile?.lastName;
 
-  }
     // Generate access and refresh tokens
     const accessToken = jwt.sign(
       { userId, userEmail, userRole, userName },
       process.env.ACCESS_TOKEN,
-      { expiresIn: "15m" }
+      { expiresIn: "30d" }
     );
 
     const refreshToken = jwt.sign(
-      { userId, userEmail, userRole, userName},
+      { userId, userEmail, userRole, userName },
       process.env.REFRESH_TOKEN,
       { expiresIn: "30d" }
     );
@@ -214,8 +198,11 @@ async function userSignIn(req, res) {
       },
     });
   } catch (error) {
-    console.error(error); // Log the error for debugging
-    return res.status(500).send({ message: "Internal Server Error" });
+    return res.status(500).send({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 }
 
