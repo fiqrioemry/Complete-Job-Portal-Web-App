@@ -25,7 +25,7 @@ const CertificationSchema = new mongoose.Schema({
   credentialId: String,
 });
 
-const SeekerProfileSchema = new mongoose.Schema({
+const SeekerSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   firstname: String,
   lastname: String,
@@ -41,4 +41,4 @@ const SeekerProfileSchema = new mongoose.Schema({
   skills: [{ type: String }],
 });
 
-module.exports = mongoose.model("SeekerProfile", SeekerProfileSchema);
+module.exports = mongoose.model("Seeker", SeekerSchema);

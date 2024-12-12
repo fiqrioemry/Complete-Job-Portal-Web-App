@@ -1,13 +1,13 @@
-const SeekerProfile = require("../../model/SeekerProfile");
+const Seeker = require("../../model/Seeker");
 
 // Get SeekerProfile
 async function getSeekerProfile(req, res) {
   try {
     const { userId } = req.user;
 
-    const seekerProfile = await SeekerProfile.findOne({ userId });
+    const seekerData = await Seeker.findOne({ userId });
 
-    if (!seekerProfile) {
+    if (!seekerData) {
       return res
         .status(404)
         .json({ success: false, message: "Seeker profile not found." });
@@ -16,7 +16,7 @@ async function getSeekerProfile(req, res) {
     return res.status(200).json({
       success: true,
       message: "Profile retrieved successfully.",
-      data: seekerProfile,
+      data: seekerData,
     });
   } catch (error) {
     return res.status(500).json({
@@ -43,37 +43,37 @@ async function updateSeekerProfile(req, res) {
       resumeUrl,
     } = req.body;
 
-    const seekerProfile = await SeekerProfile.findOne({ userId });
+    const seekerData = await Seeker.findOne({ userId });
 
-    if (!seekerProfile) {
+    if (!seekerData) {
       return res
         .status(404)
         .json({ success: false, message: "Seeker profile not found." });
     }
 
     // Update profile fields
-    if (firstname) seekerProfile.firstname = firstname;
-    if (lastname) seekerProfile.lastname = lastname;
-    if (gender) seekerProfile.gender = gender;
-    if (birthday) seekerProfile.birthday = birthday;
-    if (phone) seekerProfile.phone = phone;
-    if (address) seekerProfile.address = address;
-    if (bio) seekerProfile.bio = bio;
-    if (resumeUrl) seekerProfile.resumeUrl = resumeUrl;
+    if (firstname) seekerData.firstname = firstname;
+    if (lastname) seekerData.lastname = lastname;
+    if (gender) seekerData.gender = gender;
+    if (birthday) seekerData.birthday = birthday;
+    if (phone) seekerData.phone = phone;
+    if (address) seekerData.address = address;
+    if (bio) seekerData.bio = bio;
+    if (resumeUrl) seekerData.resumeUrl = resumeUrl;
     if (skills) {
       if (Array.isArray(skills)) {
-        seekerProfile.skills.push(...skills);
+        seekerData.skills.push(...skills);
       } else {
-        seekerProfile.skills.push(skills);
+        seekerData.skills.push(skills);
       }
     }
 
-    await seekerProfile.save();
+    await seekerData.save();
 
     return res.status(200).json({
       success: true,
       message: "Profile updated successfully.",
-      data: seekerProfile,
+      data: seekerData,
     });
   } catch (error) {
     return res.status(500).json({
@@ -98,16 +98,16 @@ async function addSeekerExperience(req, res) {
     }
 
     // Find the seeker profile by userId
-    const seekerProfile = await SeekerProfile.findOne({ userId });
+    const seeker = await Seeker.findOne({ userId });
 
-    if (!seekerProfile) {
+    if (!seeker) {
       return res
         .status(404)
         .json({ success: false, message: "Seeker profile not found." });
     }
 
     // Add the new experience to the experience array
-    seekerProfile.experience.push({
+    seeker.experience.push({
       userId,
       company,
       position,
@@ -115,7 +115,7 @@ async function addSeekerExperience(req, res) {
       endDate,
       description,
     });
-    await seekerProfile.save();
+    await seeker.save();
 
     return res.status(200).json({
       success: true,
@@ -146,12 +146,12 @@ async function updateSeekerExperience(req, res) {
     }
 
     // check experience data validity
-    const experienceData = await SeekerProfile.findOne({
+    const seekerData = await Seeker.findOne({
       userId,
     });
-    const experienceCheck = experienceData.experience.id(id);
+    const experienceData = seekerData.experience.id(id);
 
-    if (!experienceCheck) {
+    if (!experienceData) {
       return res.status(404).json({
         success: false,
         message: "experience not found.",
@@ -176,7 +176,7 @@ async function updateSeekerExperience(req, res) {
     };
 
     // Update experience
-    const seekerProfile = await SeekerProfile.findOneAndUpdate(filter, update, {
+    const seekerNewData = await Seeker.findOneAndUpdate(filter, update, {
       new: true,
     });
 
@@ -184,7 +184,7 @@ async function updateSeekerExperience(req, res) {
     return res.status(200).json({
       success: true,
       message: "Experience updated successfully.",
-      updatedData: seekerProfile.experience.id(id),
+      updatedData: seekerNewData.experience.id(id),
     });
   } catch (error) {
     return res.status(500).json({
@@ -209,23 +209,23 @@ async function addSeekerEducation(req, res) {
     }
 
     // Find  seeker profile by userId
-    const seekerProfile = await SeekerProfile.findOne({ userId });
+    const seekerData = await Seeker.findOne({ userId });
 
-    if (!seekerProfile) {
+    if (!seekerData) {
       return res
         .status(404)
         .json({ success: false, message: "Seeker profile not found." });
     }
 
     // push education data
-    seekerProfile.education.push({
+    seekerData.education.push({
       userId,
       institution,
       fieldOfStudy,
       startDate,
       endDate,
     });
-    await seekerProfile.save();
+    await seekerData.save();
 
     return res.status(200).json({
       success: true,
@@ -255,11 +255,11 @@ async function updateSeekerEducation(req, res) {
     }
 
     // check education data validity
-    const educationData = await SeekerProfile.findOne({
+    const seekerData = await Seeker.findOne({
       userId,
     });
 
-    const educationCheck = educationData.education.id(id);
+    const educationData = seekerData.education.id(id);
 
     if (!educationCheck) {
       return res.status(404).json({
@@ -285,7 +285,7 @@ async function updateSeekerEducation(req, res) {
     };
 
     // Update experience
-    const seekerProfile = await SeekerProfile.findOneAndUpdate(filter, update, {
+    const seekerNewData = await Seeker.findOneAndUpdate(filter, update, {
       new: true,
     });
 
@@ -293,7 +293,7 @@ async function updateSeekerEducation(req, res) {
     return res.status(200).json({
       success: true,
       message: "Education updated successfully.",
-      updatedData: seekerProfile.education.id(id),
+      updatedData: seekerNewData.education.id(id),
     });
   } catch (error) {
     return res.status(500).json({
@@ -318,23 +318,23 @@ async function addSeekerCertification(req, res) {
     }
 
     // Find  seeker profile by userId
-    const seekerProfile = await SeekerProfile.findOne({ userId });
+    const seekerData = await Seeker.findOne({ userId });
 
-    if (!seekerProfile) {
+    if (!seekerData) {
       return res
         .status(404)
         .json({ success: false, message: "Seeker profile not found." });
     }
 
     // push certification data
-    seekerProfile.certification.push({
+    seekerData.certification.push({
       userId,
       name,
       issuedBy,
       issuedDate,
       credentialId,
     });
-    await seekerProfile.save();
+    await seekerData.save();
 
     return res.status(200).json({
       success: true,
@@ -364,13 +364,13 @@ async function updateSeekerCertification(req, res) {
     }
 
     // check certification data validity
-    const certificationData = await SeekerProfile.findOne({
+    const seekerData = await Seeker.findOne({
       userId,
     });
 
-    const certificationCheck = certificationData.certification.id(id);
+    const certificationData = seekerData.certification.id(id);
 
-    if (!certificationCheck) {
+    if (!certificationData) {
       return res.status(404).json({
         success: false,
         message: "certification not found.",
@@ -394,7 +394,7 @@ async function updateSeekerCertification(req, res) {
     };
 
     // Update experience
-    const seekerProfile = await SeekerProfile.findOneAndUpdate(filter, update, {
+    const seekerNewData = await Seeker.findOneAndUpdate(filter, update, {
       new: true,
     });
 
@@ -402,7 +402,7 @@ async function updateSeekerCertification(req, res) {
     return res.status(200).json({
       success: true,
       message: "certification updated successfully.",
-      updatedData: seekerProfile.certification.id(id),
+      updatedData: seekerNewData.certification.id(id),
     });
   } catch (error) {
     return res.status(500).json({

@@ -3,36 +3,75 @@ const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 const User = require("../../model/User");
 const Token = require("../../model/Token");
-const SeekerProfile = require("../../model/SeekerProfile");
+const Seeker = require("../../model/Seeker");
 dotenv.config();
 
 // user signup : registration
-async function userSignUp(req, res) {
+async function seekerSignUp(req, res) {
   try {
     const {
       email,
       password,
       passwordConfirm,
-      role,
       firstname,
       lastname,
       phone,
       location,
     } = req.body;
 
-    // check field empty
-    if (
-      !email ||
-      !password ||
-      !passwordConfirm ||
-      !firstname ||
-      !lastname ||
-      !phone ||
-      !location
-    )
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+    // check email existance
+    const isEmailExist = await User.findOne({ email });
+
+    if (isEmailExist)
       return res
         .status(401)
-        .send({ success: false, message: "All field required" });
+        .send({ success: false, message: "Email is already registered" });
+
+    // encrypt password
+    const salt = await bcrypt.genSalt();
+    const hashPassword = await bcrypt.hash(password, salt);
+
+    // save user
+    const newUser = await User.create({
+      email,
+      password: hashPassword,
+      role: "job seeker",
+    });
+
+    // save user
+    await Seeker.create({
+      userId: newUser._id,
+      firstname,
+      lastname,
+      location,
+      phone,
+    });
+
+    // send success info
+    return res
+      .status(201)
+      .send({ message: "Registration success, please login." });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({ message: "Internal Server Error" });
+  }
+}
+
+// user signup : registration
+async function recruiterSignUp(req, res) {
+  try {
+    const {
+      email,
+      password,
+      passwordConfirm,
+      firstname,
+      lastname,
+      phone,
+      location,
+    } = req.body;
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
@@ -57,7 +96,7 @@ async function userSignUp(req, res) {
     });
 
     // save user
-    await SeekerProfile.create({
+    await Seeker.create({
       userId: newUser._id,
       firstname,
       lastname,
@@ -110,7 +149,7 @@ async function userSignIn(req, res) {
         .status(401)
         .send({ success: false, message: "Password is incorrect" });
 
-    const profile = await SeekerProfile.findOne({ userId: isUserExist._id });
+    const profile = await Seeker.findOne({ userId: isUserExist._id });
 
     // Extract user data
     const userId = isUserExist._id;
