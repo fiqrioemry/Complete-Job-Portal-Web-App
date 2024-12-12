@@ -145,6 +145,19 @@ async function updateSeekerExperience(req, res) {
         .json({ success: false, message: "Required fields are missing." });
     }
 
+    // check experience data validity
+    const experienceData = await SeekerProfile.findOne({
+      userId,
+    });
+    const experienceCheck = experienceData.experience.id(id);
+
+    if (!experienceCheck) {
+      return res.status(404).json({
+        success: false,
+        message: "experience not found.",
+      });
+    }
+
     // add key finder
     const filter = {
       userId: userId,
@@ -167,12 +180,6 @@ async function updateSeekerExperience(req, res) {
       new: true,
     });
 
-    if (!seekerProfile) {
-      return res.status(404).json({
-        success: false,
-        message: "Experience not found.",
-      });
-    }
     // send response and updated data
     return res.status(200).json({
       success: true,
@@ -247,42 +254,46 @@ async function updateSeekerEducation(req, res) {
         .json({ success: false, message: "Required fields are missing." });
     }
 
-    // add key finder
-    const filter = {
+    // check education data validity
+    const educationData = await SeekerProfile.findOne({
       userId,
-      "education._id": id,
-    };
+    });
 
-    // add update data
-    const update = {
-      $set: {
-        "education.$.insitution": institution,
-        "education.$.fieldOfStudy": fieldOfStudy,
-        "education.$.startDate": startDate,
-        "education.$.endDate": endDate,
-      },
-    };
-    // find and update
-    const seekerProfile = await SeekerProfile.findOne(
-      { userId, "education._id": mongoose.Types.ObjectId(id) },
-      { "education.$": 1 } // Hanya mengambil elemen yang cocok dari array education
-    );
+    const educationCheck = educationData.education.id(id);
 
-    console.log(seekerProfile);
-
-    if (!seekerProfile) {
+    if (!educationCheck) {
       return res.status(404).json({
         success: false,
         message: "Education not found.",
       });
     }
 
-    console.log(seekerProfile);
+    // add key finder
+    const filter = {
+      userId: userId,
+      "education._id": id,
+    };
+
+    // assign update value
+    const update = {
+      $set: {
+        "education.$.institution": institution,
+        "education.$.fieldOfStudy": fieldOfStudy,
+        "education.$.startDate": startDate,
+        "education.$.endDate": endDate,
+      },
+    };
+
+    // Update experience
+    const seekerProfile = await SeekerProfile.findOneAndUpdate(filter, update, {
+      new: true,
+    });
+
     // send response and updated data
     return res.status(200).json({
       success: true,
       message: "Education updated successfully.",
-      updatedData: seekerProfile,
+      updatedData: seekerProfile.education.id(id),
     });
   } catch (error) {
     return res.status(500).json({
