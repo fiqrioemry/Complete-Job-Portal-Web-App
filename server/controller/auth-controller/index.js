@@ -139,7 +139,7 @@ async function userSignIn(req, res) {
       await Token.create({ userId, refreshToken });
     }
 
-    // Set the refresh token in a cookie
+    // Set the refresh token as cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -148,7 +148,7 @@ async function userSignIn(req, res) {
 
     // Send response with success status and token
     return res.status(200).send({
-      message: "Login successful",
+      message: "Login is success",
       data: {
         accessToken,
         user: {
@@ -169,9 +169,50 @@ async function userSignIn(req, res) {
 async function userSignOut(req, res) {
   res.clearCookie("refreshToken");
   return res.status(200).send({
-    message: "Logout is successful",
+    message: "Logout is success",
     success: true,
   });
 }
 
-module.exports = { userSignUp, userSignIn, userSignOut };
+// user refresh token
+async function userRefreshToken(req, res) {
+  try {
+    const { refreshToken } = req.cookies;
+
+    // cek token availability
+    if (!refreshToken)
+      return res
+        .status(401)
+        .send({ success: false, message: "Session expired, please login " });
+
+    // cek token validity
+    const validToken = await Token.findOne({ refreshToken });
+
+    if (!validToken) {
+      return res.status(401).send({ message: "Unauthorized Access !!!" });
+    }
+
+    // decode userdata
+    const decode = jwt.verify(refreshToken, process.env.REFRESH_TOKEN);
+
+    // assign user data
+    const payload = {
+      userId: decode.userId,
+      userEmail: decode.userEmail,
+      userRole: decode.userRole,
+      userName: decode.userName,
+    };
+
+    // generate new accesstoken
+    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN, {
+      expiresIn: "15m",
+    });
+
+    return res.status(201).send({ success: true, accessToken: accessToken });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ success: false, message: error.message });
+  }
+}
+
+module.exports = { userSignUp, userSignIn, userSignOut, userRefreshToken };

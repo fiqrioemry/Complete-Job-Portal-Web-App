@@ -59,8 +59,14 @@ async function updateSeekerProfile(req, res) {
     if (phone) seekerProfile.phone = phone;
     if (address) seekerProfile.address = address;
     if (bio) seekerProfile.bio = bio;
-    if (skills) seekerProfile.skills = skills;
     if (resumeUrl) seekerProfile.resumeUrl = resumeUrl;
+    if (skills) {
+      if (Array.isArray(skills)) {
+        seekerProfile.skills.push(...skills);
+      } else {
+        seekerProfile.skills.push(skills);
+      }
+    }
 
     await seekerProfile.save();
 
@@ -128,17 +134,13 @@ async function addSeekerExperience(req, res) {
 // Update an Experience in SeekerProfile
 async function updateSeekerExperience(req, res) {
   try {
-    const {
-      userId,
-      experienceId,
-      company,
-      position,
-      startDate,
-      endDate,
-      description,
-    } = req.body;
+    const { id } = req.params;
+    const { userId } = req.user;
 
-    if (!userId || !experienceId) {
+    const { company, position, startDate, endDate, description } = req.body;
+
+    // Validate required fields
+    if (!company || !position || !startDate || !endDate) {
       return res
         .status(400)
         .json({ success: false, message: "Required fields are missing." });
@@ -152,8 +154,8 @@ async function updateSeekerExperience(req, res) {
         .json({ success: false, message: "Seeker profile not found." });
     }
 
-    const experience = seekerProfile.experience.id(experienceId);
-
+    const experience = seekerProfile.experience.find((item) => item._id === id);
+    console.log(seekerProfile.experience);
     if (!experience) {
       return res
         .status(404)
