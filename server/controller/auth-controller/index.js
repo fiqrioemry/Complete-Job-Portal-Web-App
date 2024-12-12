@@ -4,9 +4,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../../model/User");
 const Token = require("../../model/Token");
 const Seeker = require("../../model/Seeker");
+const Recruiter = require("../../model/Recruiter");
 dotenv.config();
 
-// user signup : registration
+// seeker signup : registration
 async function seekerSignUp(req, res) {
   try {
     const {

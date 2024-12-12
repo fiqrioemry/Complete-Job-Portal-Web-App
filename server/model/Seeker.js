@@ -12,8 +12,8 @@ const ExperienceSchema = new mongoose.Schema({
   userId: String,
   company: String,
   position: String,
-  startDate: { type: Date },
-  endDate: { type: Date },
+  startDate: Date,
+  endDate: Date,
   description: String,
 });
 
@@ -21,7 +21,7 @@ const CertificationSchema = new mongoose.Schema({
   userId: String,
   name: String,
   issuedBy: String,
-  issueDate: { type: Date },
+  issueDate: Date,
   credentialId: String,
 });
 
