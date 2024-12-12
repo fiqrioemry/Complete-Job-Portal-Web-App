@@ -35,15 +35,15 @@ router.put(
   seeker.updateSeekerEducation
 );
 
-// certification
-// router.post(
-//   "/experience/add",
-//   validation.isAuthenticate,
-//   seeker.addSeekerExperience
-// );
-// router.put(
-//   "/experience/update/:id",
-//   validation.isAuthenticate,
-//   seeker.updateSeekerExperience
-// );
+// certification;
+router.post(
+  "/certification/add",
+  validation.isAuthenticate,
+  seeker.addSeekerCertification
+);
+router.put(
+  "/certification/update/:id",
+  validation.isAuthenticate,
+  seeker.updateSeekerCertification
+);
 module.exports = router;

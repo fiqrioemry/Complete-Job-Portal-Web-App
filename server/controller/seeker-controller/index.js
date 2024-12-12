@@ -304,6 +304,115 @@ async function updateSeekerEducation(req, res) {
   }
 }
 
+// Add Education to SeekerProfile
+async function addSeekerCertification(req, res) {
+  try {
+    const { userId } = req.user;
+    const { name, issuedBy, issuedDate, credentialId } = req.body;
+
+    // Validate required fields
+    if (!name || !issuedBy || !issuedDate || !credentialId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Required fields are missing." });
+    }
+
+    // Find  seeker profile by userId
+    const seekerProfile = await SeekerProfile.findOne({ userId });
+
+    if (!seekerProfile) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Seeker profile not found." });
+    }
+
+    // push certification data
+    seekerProfile.certification.push({
+      userId,
+      name,
+      issuedBy,
+      issuedDate,
+      credentialId,
+    });
+    await seekerProfile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "certification added successfully.",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+}
+
+//Update certification in SeekerProfile
+async function updateSeekerCertification(req, res) {
+  try {
+    const { id } = req.params;
+    const { userId } = req.user;
+    const { name, issuedBy, issuedDate, credentialId } = req.body;
+
+    // Validate required fields
+    if (!name || !issuedBy || !issuedDate || !credentialId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Required fields are missing." });
+    }
+
+    // check certification data validity
+    const certificationData = await SeekerProfile.findOne({
+      userId,
+    });
+
+    const certificationCheck = certificationData.certification.id(id);
+
+    if (!certificationCheck) {
+      return res.status(404).json({
+        success: false,
+        message: "certification not found.",
+      });
+    }
+
+    // add key finder
+    const filter = {
+      userId: userId,
+      "certification._id": id,
+    };
+
+    // assign update value
+    const update = {
+      $set: {
+        "certification.$.name": name,
+        "certification.$.issuedBy": issuedBy,
+        "certification.$.issuedDate": issuedDate,
+        "certification.$.credetialId": credentialId,
+      },
+    };
+
+    // Update experience
+    const seekerProfile = await SeekerProfile.findOneAndUpdate(filter, update, {
+      new: true,
+    });
+
+    // send response and updated data
+    return res.status(200).json({
+      success: true,
+      message: "certification updated successfully.",
+      updatedData: seekerProfile.certification.id(id),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+}
+
 module.exports = {
   getSeekerProfile,
   updateSeekerProfile,
@@ -311,4 +420,6 @@ module.exports = {
   updateSeekerExperience,
   addSeekerEducation,
   updateSeekerEducation,
+  addSeekerCertification,
+  updateSeekerCertification,
 };
